@@ -1,34 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!--    <script src="https://cdn.bootcss.com/vConsole/3.3.4/vconsole.min.js"></script>-->
-<!--    <script>-->
-<!--      // 初始化-->
-<!--      var vConsole = new VConsole();-->
-<!--      console.log('Hello world');-->
-<!--    </script>-->
-    <title></title>
-    <style>
-      *{
-        margin:0;
-        padding:0;
-      }
+<html>
+<body>
 
-      html, body,
-      #app{
-        width:100%;
-        height:100%;
-        border: 0 none;
+<button onclick="speak('head')">点击我发声</button>
 
-      }
-    </style>
-    <script type="module" crossorigin src="./assets/index-fdd1af92.js"></script>
-    <link rel="stylesheet" href="./assets/index-025565a5.css">
-  </head>
-  <body>
-    <div id="app"></div>
-    
-  </body>
+<script>
+  function speak(text) {
+    var msg = new SpeechSynthesisUtterance(text);
+
+msg.pitch = 1
+msg.rate = 0.8
+
+
+    window.speechSynthesis.speak(msg);
+  }
+</script>
+
+</body>
 </html>

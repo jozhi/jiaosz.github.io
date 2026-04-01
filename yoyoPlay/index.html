@@ -164,6 +164,39 @@
       min-width: 50px;
     }
 
+    .score-value {
+      width: 60px;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      min-width: 60px;
+    }
+
+    .score-value.own {
+      color: #27ae60;
+    }
+
+    .score-value.opponent {
+      color: #e74c3c;
+    }
+
+    .score-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+
+    .score-item.own {
+      background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+    }
+
+    .score-item.opponent {
+      background: linear-gradient(135deg, #ffd6c2 0%, #ff9c9f 100%);
+    }
+
     .stat-calculated {
       background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
       padding: 8px 10px;
@@ -408,11 +441,27 @@
             </div>
           </div>
           <div class="stat-item">
+            <span class="stat-label">一传失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('defense', 'passErrors', -1)">-</button>
+              <span class="stat-value">{{ data.defense.passErrors }}</span>
+              <button class="btn btn-add" @click="updateStat('defense', 'passErrors', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
             <span class="stat-label">防守起球数</span>
             <div class="stat-controls">
               <button class="btn btn-subtract" @click="updateStat('defense', 'digSuccess', -1)">-</button>
               <span class="stat-value">{{ data.defense.digSuccess }}</span>
               <button class="btn btn-add" @click="updateStat('defense', 'digSuccess', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">防守失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('defense', 'defenseErrors', -1)">-</button>
+              <span class="stat-value">{{ data.defense.defenseErrors }}</span>
+              <button class="btn btn-add" @click="updateStat('defense', 'defenseErrors', 1)">+</button>
             </div>
           </div>
           <div class="stat-item">
@@ -422,6 +471,42 @@
               <span class="stat-value">{{ data.defense.saves }}</span>
               <button class="btn btn-add" @click="updateStat('defense', 'saves', 1)">+</button>
             </div>
+          </div>
+        </div>
+
+        <!-- 比赛得分 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏆</div>
+            <div class="card-title">比赛得分</div>
+          </div>
+          <div class="score-item own">
+            <span class="stat-label" style="font-size: 1rem;">己队得分</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateGameScore('ownScore', -1)">-</button>
+              <span class="score-value own">{{ raw.ownScore }}</span>
+              <button class="btn btn-add" @click="updateGameScore('ownScore', 1)">+</button>
+            </div>
+          </div>
+          <div class="score-item opponent">
+            <span class="stat-label" style="font-size: 1rem;">对方得分</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateGameScore('opponentScore', -1)">-</button>
+              <span class="score-value opponent">{{ raw.opponentScore }}</span>
+              <button class="btn btn-add" @click="updateGameScore('opponentScore', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">个人技术得分（最小值）</div>
+            <div class="stat-calculated-value">{{ data.general.technicalScore }}</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">失误总数（最小值）</div>
+            <div class="stat-calculated-value">{{ data.general.totalErrors }}</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">比分差距</div>
+            <div class="stat-calculated-value">{{ data.general.scoreDifference }}</div>
           </div>
         </div>
 
@@ -475,6 +560,19 @@
             <div class="stat-calculated-title">攻防效率</div>
             <div class="stat-calculated-percent">{{ data.general.attackDefenseEfficiency }}%</div>
           </div>
+
+          <div class="score-item own" style="margin-top: 10px;">
+            <span class="stat-label" style="font-size: 1rem;">己队得分</span>
+            <div class="stat-controls">
+              <span class="score-value own">{{ raw.ownScore }}</span>
+            </div>
+          </div>
+          <div class="score-item opponent">
+            <span class="stat-label" style="font-size: 1rem;">对方得分</span>
+            <div class="stat-controls">
+              <span class="score-value opponent">{{ raw.opponentScore }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -493,16 +591,31 @@
       attack: { kills: 0, errors: 0, blocked: 0 },
       serve: { aces: 0, errors: 0 },
       block: { kills: 0, effective: 0, errors: 0 },
-      defense: { passSuccess: 0, digSuccess: 0, saves: 0, totalReceives: 0 },
+      defense: { passSuccess: 0, passErrors: 0, digSuccess: 0, defenseErrors: 0, saves: 0, totalReceives: 0 },
       set: { attempts: 0, assists: 0, errors: 0 },
-      general: { totalScore: 0, totalErrors: 0, attackDefenseEfficiency: 0 }
+      general: { totalScore: 0, totalErrors: 0, attackDefenseEfficiency: 0 },
+      ownScore: 0,
+      opponentScore: 0
     };
 
     // 从 localStorage 加载数据
     function loadData() {
       const saved = localStorage.getItem('volleyballStats');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // 兼容旧数据，添加新字段
+        if (parsed.defense && parsed.defense.passErrors === undefined) parsed.defense.passErrors = 0;
+        if (parsed.defense && parsed.defense.defenseErrors === undefined) parsed.defense.defenseErrors = 0;
+        if (parsed.defense && parsed.defense.totalReceives === undefined) parsed.defense.totalReceives = 0;
+        // 初始化比分：如果不存在，则根据技术统计自动设置
+        if (parsed.ownScore === undefined) {
+          parsed.ownScore = (parsed.attack?.kills || 0) + (parsed.serve?.aces || 0) + (parsed.block?.kills || 0);
+        }
+        if (parsed.opponentScore === undefined) {
+          parsed.opponentScore = (parsed.serve?.errors || 0) + (parsed.block?.errors || 0) + (parsed.attack?.errors || 0) +
+                                (parsed.set?.errors || 0) + (parsed.defense?.passErrors || 0) + (parsed.defense?.defenseErrors || 0);
+        }
+        return parsed;
       }
       return defaultData;
     }
@@ -537,23 +650,36 @@
         digSuccessRate: '0.00'
       };
 
-      if (player.defense.totalReceives > 0) {
-        defense.passSuccessRate = ((player.defense.passSuccess / player.defense.totalReceives) * 100).toFixed(2);
+      // 一传到位率 = 一传到位 / (一传到位 + 一传失误)
+      const totalPassReceives = (player.defense.passSuccess || 0) + (player.defense.passErrors || 0);
+      if (totalPassReceives > 0) {
+        defense.passSuccessRate = ((player.defense.passSuccess / totalPassReceives) * 100).toFixed(2);
       }
 
       if (player.defense.digSuccess > 0) {
         defense.digSuccessRate = '100.00';
       }
 
+      // 个人技术得分 = 扣球得分 + 发球得分 + 拦网得分
+      const technicalScore = player.attack.kills + player.serve.aces + player.block.kills;
+
+      // 失误总数 = 发球失误 + 拦网失误 + 扣球失误 + 传球失误 + 一传失误 + 防守失误
+      const totalErrors = player.serve.errors + player.block.errors + player.attack.errors +
+                          player.set.errors + (player.defense.passErrors || 0) + (player.defense.defenseErrors || 0);
+
+      const totalTouch = player.attack.kills + player.attack.errors + player.attack.blocked +
+                        player.defense.passSuccess + player.defense.digSuccess + player.defense.saves;
+
       const general = {
         totalScore: player.attack.kills + player.serve.aces + player.block.kills,
-        totalErrors: player.attack.errors + player.serve.errors + player.block.errors + player.defense.passSuccess + player.set.errors,
-        attackDefenseEfficiency: '0.00'
+        technicalScore: technicalScore,
+        totalErrors: totalErrors,
+        attackDefenseEfficiency: '0.00',
+        scoreDifference: (player.ownScore || 0) - (player.opponentScore || 0)
       };
 
-      const totalTouch = player.attack.kills + player.attack.errors + player.attack.blocked + player.defense.passSuccess + player.defense.digSuccess + player.defense.saves;
       if (totalTouch > 0) {
-        general.attackDefenseEfficiency = ((general.totalScore / totalTouch) * 100).toFixed(2);
+        general.attackDefenseEfficiency = ((technicalScore / totalTouch) * 100).toFixed(2);
       }
 
       return {
@@ -580,23 +706,108 @@
       methods: {
         updateStat(category, stat, change) {
           if (this.raw[category] && this.raw[category][stat] !== undefined) {
+            const oldValue = this.raw[category][stat];
+
+            // 如果是减操作且旧值为0，则不执行任何操作
+            if (change < 0 && oldValue <= 0) {
+              return;
+            }
+
             this.raw[category][stat] += change;
             if (this.raw[category][stat] < 0) {
               this.raw[category][stat] = 0;
+            }
+
+            // 同步更新比分
+            // 得分项：扣球得分、发球得分、拦网得分 → 更新己队得分
+            const scoreItems = [
+              { category: 'attack', stat: 'kills' },
+              { category: 'serve', stat: 'aces' },
+              { category: 'block', stat: 'kills' }
+            ];
+
+            // 失误项：扣球失误、发球失误、拦网失误、传球失误、一传失误、防守失误 → 更新对方得分
+            const errorItems = [
+              { category: 'attack', stat: 'errors' },
+              { category: 'serve', stat: 'errors' },
+              { category: 'block', stat: 'errors' },
+              { category: 'set', stat: 'errors' },
+              { category: 'defense', stat: 'passErrors' },
+              { category: 'defense', stat: 'defenseErrors' }
+            ];
+
+            // 检查是否是得分项
+            const isScoreItem = scoreItems.some(item => item.category === category && item.stat === stat);
+
+            // 检查是否是失误项
+            const isErrorItem = errorItems.some(item => item.category === category && item.stat === stat);
+
+            if (isScoreItem) {
+              // 得分项变化：同步更新己队得分
+              this.raw.ownScore += change;
+              if (this.raw.ownScore < 0) {
+                this.raw.ownScore = 0;
+              }
+            } else if (isErrorItem) {
+              // 失误项变化：同步更新对方得分
+              this.raw.opponentScore += change;
+              if (this.raw.opponentScore < 0) {
+                this.raw.opponentScore = 0;
+              }
+            }
+
+            saveData(this.raw);
+          }
+        },
+        updateGameScore(type, change) {
+          if (type === 'ownScore' || type === 'opponentScore') {
+            // 计算最小值
+            const technicalScore = this.raw.attack.kills + this.raw.serve.aces + this.raw.block.kills;
+            const totalErrors = this.raw.serve.errors + this.raw.block.errors + this.raw.attack.errors +
+                              this.raw.set.errors + (this.raw.defense.passErrors || 0) + (this.raw.defense.defenseErrors || 0);
+
+            const newValue = this.raw[type] + change;
+
+            // 己队得分不能少于技术得分
+            if (type === 'ownScore' && newValue < technicalScore) {
+              this.raw[type] = technicalScore;
+            }
+            // 对方得分不能少于失误总数
+            else if (type === 'opponentScore' && newValue < totalErrors) {
+              this.raw[type] = totalErrors;
+            }
+            // 正常更新
+            else if (newValue >= 0) {
+              this.raw[type] = newValue;
+            } else {
+              this.raw[type] = 0;
             }
             saveData(this.raw);
           }
         },
         handleReset() {
           if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
-            this.raw = JSON.parse(JSON.stringify(defaultData));
-            saveData(this.raw);
-          }
-        },
-        resetData() {
-          if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
-            this.raw = JSON.parse(JSON.stringify(defaultData));
-            saveData(this.raw);
+            // 创建一个全新的默认数据对象，确保不会被引用污染
+            const newDefaultData = {
+              attack: { kills: 0, errors: 0, blocked: 0 },
+              serve: { aces: 0, errors: 0 },
+              block: { kills: 0, effective: 0, errors: 0 },
+              defense: { passSuccess: 0, passErrors: 0, digSuccess: 0, defenseErrors: 0, saves: 0, totalReceives: 0 },
+              set: { attempts: 0, assists: 0, errors: 0 },
+              general: { totalScore: 0, totalErrors: 0, attackDefenseEfficiency: 0 },
+              ownScore: 0,
+              opponentScore: 0
+            };
+
+            // 直接替换 this.raw 的每个属性，确保响应式更新
+            Object.keys(this.raw).forEach(key => {
+              if (newDefaultData[key] !== undefined) {
+                this.raw[key] = newDefaultData[key];
+              }
+            });
+
+            // 保存到 localStorage
+            saveData(newDefaultData);
           }
         },
         exportData() {
@@ -604,6 +815,13 @@
           const text = `
 排球运动员数据统计报告
 =====================
+
+比赛得分
+------
+己队得分: ${this.raw.ownScore}
+对方得分: ${this.raw.opponentScore}
+比分差距: ${stats.general.scoreDifference}
+个人技术得分: ${stats.general.technicalScore}（扣球得分+发球得分+拦网得分）
 
 进攻类
 ------
@@ -629,7 +847,9 @@
 防守/后排类
 ----------
 一传到位数: ${stats.defense.passSuccess}
+一传失误: ${stats.defense.passErrors}
 防守起球数: ${stats.defense.digSuccess}
+防守失误: ${stats.defense.defenseErrors}
 救球数: ${stats.defense.saves}
 一传到位率: ${stats.defense.passSuccessRate}%
 防守成功率: ${stats.defense.digSuccessRate}%

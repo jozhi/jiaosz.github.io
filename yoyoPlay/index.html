@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>排球运动员数据统计</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 15px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 15px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-size: 1rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .stat-item:hover {
+      background: #e9ecef;
+    }
+
+    .stat-label {
+      flex: 1;
+      font-weight: 500;
+      color: #495057;
+      font-size: 0.9rem;
+    }
+
+    .stat-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-add {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .btn-add:hover {
+      transform: scale(1.08);
+      box-shadow: 0 3px 10px rgba(79, 172, 254, 0.4);
+    }
+
+    .btn-add:active {
+      transform: scale(0.95);
+    }
+
+    .btn-subtract {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      color: #333;
+    }
+
+    .btn-subtract:hover {
+      transform: scale(1.08);
+      box-shadow: 0 3px 10px rgba(255, 154, 158, 0.4);
+    }
+
+    .btn-subtract:active {
+      transform: scale(0.95);
+    }
+
+    .stat-value {
+      width: 50px;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #667eea;
+      min-width: 50px;
+    }
+
+    .stat-calculated {
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .stat-calculated-title {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 3px;
+    }
+
+    .stat-calculated-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-calculated-percent {
+      font-size: 0.9rem;
+      color: #667eea;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .btn-action {
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-reset {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+    }
+
+    .btn-reset:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-reset:active {
+      transform: translateY(0);
+    }
+
+    .btn-export {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+    }
+
+    .btn-export:active {
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1200px) {
+      .grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body{
+        padding: 5px;
+      }
+      .stat-value{
+        width: auto;
+        min-width: auto;
+      }
+      .stat-item{
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>🏐 排球运动员数据统计</h1>
+        <p>实时追踪比赛表现 · 精准分析技术指标</p>
+      </div>
+
+      <div class="grid">
+        <!-- 发球类 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">发球类</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">发球得分</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('serve', 'aces', -1)">-</button>
+              <span class="stat-value">{{ data.serve.aces }}</span>
+              <button class="btn btn-add" @click="updateStat('serve', 'aces', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">发球失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('serve', 'errors', -1)">-</button>
+              <span class="stat-value">{{ data.serve.errors }}</span>
+              <button class="btn btn-add" @click="updateStat('serve', 'errors', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 拦网类 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🛡️</div>
+            <div class="card-title">拦网类</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">拦网得分</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('block', 'kills', -1)">-</button>
+              <span class="stat-value">{{ data.block.kills }}</span>
+              <button class="btn btn-add" @click="updateStat('block', 'kills', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">有效拦网</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('block', 'effective', -1)">-</button>
+              <span class="stat-value">{{ data.block.effective }}</span>
+              <button class="btn btn-add" @click="updateStat('block', 'effective', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">拦网失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('block', 'errors', -1)">-</button>
+              <span class="stat-value">{{ data.block.errors }}</span>
+              <button class="btn btn-add" @click="updateStat('block', 'errors', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 二传专属 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🎪</div>
+            <div class="card-title">二传专属</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">传球次数</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('set', 'attempts', -1)">-</button>
+              <span class="stat-value">{{ data.set.attempts }}</span>
+              <button class="btn btn-add" @click="updateStat('set', 'attempts', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">助攻数</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('set', 'assists', -1)">-</button>
+              <span class="stat-value">{{ data.set.assists }}</span>
+              <button class="btn btn-add" @click="updateStat('set', 'assists', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">传球失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('set', 'errors', -1)">-</button>
+              <span class="stat-value">{{ data.set.errors }}</span>
+              <button class="btn btn-add" @click="updateStat('set', 'errors', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 进攻类 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">进攻类</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">扣球得分</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('attack', 'kills', -1)">-</button>
+              <span class="stat-value">{{ data.attack.kills }}</span>
+              <button class="btn btn-add" @click="updateStat('attack', 'kills', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">扣球失误</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('attack', 'errors', -1)">-</button>
+              <span class="stat-value">{{ data.attack.errors }}</span>
+              <button class="btn btn-add" @click="updateStat('attack', 'errors', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">扣球被拦</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('attack', 'blocked', -1)">-</button>
+              <span class="stat-value">{{ data.attack.blocked }}</span>
+              <button class="btn btn-add" @click="updateStat('attack', 'blocked', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 防守/后排类 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🧤</div>
+            <div class="card-title">防守/后排类</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">一传到位率</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('defense', 'passSuccess', -1)">-</button>
+              <span class="stat-value">{{ data.defense.passSuccess }}</span>
+              <button class="btn btn-add" @click="updateStat('defense', 'passSuccess', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">防守起球数</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('defense', 'digSuccess', -1)">-</button>
+              <span class="stat-value">{{ data.defense.digSuccess }}</span>
+              <button class="btn btn-add" @click="updateStat('defense', 'digSuccess', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">救球数</span>
+            <div class="stat-controls">
+              <button class="btn btn-subtract" @click="updateStat('defense', 'saves', -1)">-</button>
+              <span class="stat-value">{{ data.defense.saves }}</span>
+              <button class="btn btn-add" @click="updateStat('defense', 'saves', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 通用综合指标 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📊</div>
+            <div class="card-title">通用综合指标</div>
+          </div>
+
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">发球总数</div>
+            <div class="stat-calculated-value">{{ data.serve.totalAttempts }}</div>
+          </div>
+
+
+
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">扣球总数</div>
+            <div class="stat-calculated-value">{{ data.attack.totalAttempts }}</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">扣球成功率</div>
+            <div class="stat-calculated-percent">{{ data.attack.successRate }}%</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">扣球效率</div>
+            <div class="stat-calculated-percent">{{ data.attack.efficiency }}%</div>
+          </div>
+
+
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">一传到位率</div>
+            <div class="stat-calculated-percent">{{ data.defense.passSuccessRate }}%</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">防守成功率</div>
+            <div class="stat-calculated-percent">{{ data.defense.digSuccessRate }}%</div>
+          </div>
+
+
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">总得分</div>
+            <div class="stat-calculated-value">{{ data.general.totalScore }}</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">失误总数</div>
+            <div class="stat-calculated-value">{{ data.general.totalErrors }}</div>
+          </div>
+          <div class="stat-calculated">
+            <div class="stat-calculated-title">攻防效率</div>
+            <div class="stat-calculated-percent">{{ data.general.attackDefenseEfficiency }}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-action btn-reset" @click="handleReset">重置所有数据</button>
+        <button class="btn-action btn-export" @click="exportData">导出数据</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    // 默认数据结构
+    const defaultData = {
+      attack: { kills: 0, errors: 0, blocked: 0 },
+      serve: { aces: 0, errors: 0 },
+      block: { kills: 0, effective: 0, errors: 0 },
+      defense: { passSuccess: 0, digSuccess: 0, saves: 0, totalReceives: 0 },
+      set: { attempts: 0, assists: 0, errors: 0 },
+      general: { totalScore: 0, totalErrors: 0, attackDefenseEfficiency: 0 }
+    };
+
+    // 从 localStorage 加载数据
+    function loadData() {
+      const saved = localStorage.getItem('volleyballStats');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return defaultData;
+    }
+
+    // 保存数据到 localStorage
+    function saveData(data) {
+      localStorage.setItem('volleyballStats', JSON.stringify(data));
+    }
+
+    // 计算统计数据
+    function calculateStats(player) {
+      const attack = {
+        ...player.attack,
+        totalAttempts: player.attack.kills + player.attack.errors + player.attack.blocked,
+        successRate: '0.00',
+        efficiency: '0.00'
+      };
+
+      if (attack.totalAttempts > 0) {
+        attack.successRate = ((player.attack.kills / attack.totalAttempts) * 100).toFixed(2);
+        attack.efficiency = (((player.attack.kills - player.attack.errors - player.attack.blocked) / attack.totalAttempts) * 100).toFixed(2);
+      }
+
+      const serve = {
+        ...player.serve,
+        totalAttempts: player.serve.aces + player.serve.errors
+      };
+
+      const defense = {
+        ...player.defense,
+        passSuccessRate: '0.00',
+        digSuccessRate: '0.00'
+      };
+
+      if (player.defense.totalReceives > 0) {
+        defense.passSuccessRate = ((player.defense.passSuccess / player.defense.totalReceives) * 100).toFixed(2);
+      }
+
+      if (player.defense.digSuccess > 0) {
+        defense.digSuccessRate = '100.00';
+      }
+
+      const general = {
+        totalScore: player.attack.kills + player.serve.aces + player.block.kills,
+        totalErrors: player.attack.errors + player.serve.errors + player.block.errors + player.defense.passSuccess + player.set.errors,
+        attackDefenseEfficiency: '0.00'
+      };
+
+      const totalTouch = player.attack.kills + player.attack.errors + player.attack.blocked + player.defense.passSuccess + player.defense.digSuccess + player.defense.saves;
+      if (totalTouch > 0) {
+        general.attackDefenseEfficiency = ((general.totalScore / totalTouch) * 100).toFixed(2);
+      }
+
+      return {
+        attack,
+        serve,
+        block: player.block,
+        defense,
+        set: player.set,
+        general
+      };
+    }
+
+    createApp({
+      data() {
+        return {
+          raw: loadData()
+        };
+      },
+      computed: {
+        data() {
+          return calculateStats(this.raw);
+        }
+      },
+      methods: {
+        updateStat(category, stat, change) {
+          if (this.raw[category] && this.raw[category][stat] !== undefined) {
+            this.raw[category][stat] += change;
+            if (this.raw[category][stat] < 0) {
+              this.raw[category][stat] = 0;
+            }
+            saveData(this.raw);
+          }
+        },
+        handleReset() {
+          if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
+            this.raw = JSON.parse(JSON.stringify(defaultData));
+            saveData(this.raw);
+          }
+        },
+        resetData() {
+          if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
+            this.raw = JSON.parse(JSON.stringify(defaultData));
+            saveData(this.raw);
+          }
+        },
+        exportData() {
+          const stats = this.data;
+          const text = `
+排球运动员数据统计报告
+=====================
+
+进攻类
+------
+扣球得分: ${stats.attack.kills}
+扣球失误: ${stats.attack.errors}
+扣球被拦: ${stats.attack.blocked}
+扣球总数: ${stats.attack.totalAttempts}
+扣球成功率: ${stats.attack.successRate}%
+扣球效率: ${stats.attack.efficiency}%
+
+发球类
+------
+发球得分: ${stats.serve.aces}
+发球失误: ${stats.serve.errors}
+发球总数: ${stats.serve.totalAttempts}
+
+拦网类
+------
+拦网得分: ${stats.block.kills}
+有效拦网: ${stats.block.effective}
+拦网失误: ${stats.block.errors}
+
+防守/后排类
+----------
+一传到位数: ${stats.defense.passSuccess}
+防守起球数: ${stats.defense.digSuccess}
+救球数: ${stats.defense.saves}
+一传到位率: ${stats.defense.passSuccessRate}%
+防守成功率: ${stats.defense.digSuccessRate}%
+
+二传专属
+------
+传球次数: ${stats.set.attempts}
+助攻数: ${stats.set.assists}
+传球失误: ${stats.set.errors}
+
+通用综合指标
+----------
+总得分: ${stats.general.totalScore}
+失误总数: ${stats.general.totalErrors}
+攻防效率: ${stats.general.attackDefenseEfficiency}%
+
+导出时间: ${new Date().toLocaleString()}
+          `.trim();
+
+          const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `排球数据统计_${new Date().toLocaleDateString()}.txt`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
